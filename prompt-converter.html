@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PromptWala – Aapki Baat, AI Ki Bhasha</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --card: #16161f;
+    --border: rgba(255,255,255,0.07);
+    --gold: #f0c060;
+    --gold2: #e8a030;
+    --accent: #7f5af0;
+    --accent2: #2cb67d;
+    --text: #fffffe;
+    --muted: #94a1b2;
+    --glow: rgba(127,90,240,0.25);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ─── Animated Background ─── */
+  .bg-orbs {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  }
+  .orb {
+    position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.35;
+    animation: drift 18s ease-in-out infinite alternate;
+  }
+  .orb1 { width: 500px; height: 500px; background: #7f5af0; top: -100px; left: -100px; animation-delay: 0s; }
+  .orb2 { width: 400px; height: 400px; background: #2cb67d; bottom: -80px; right: -80px; animation-delay: -6s; }
+  .orb3 { width: 300px; height: 300px; background: #f0c060; top: 40%; left: 60%; animation-delay: -12s; }
+  @keyframes drift {
+    from { transform: translate(0,0) scale(1); }
+    to   { transform: translate(40px, 30px) scale(1.12); }
+  }
+
+  /* ─── Grid Overlay ─── */
+  .grid-overlay {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+
+  /* ─── Navbar ─── */
+  nav {
+    position: relative; z-index: 10;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.5rem 3rem;
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(20px);
+    background: rgba(10,10,15,0.6);
+  }
+  .logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem; font-weight: 700;
+    background: linear-gradient(135deg, var(--gold), var(--accent));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+  }
+  .logo span { font-style: italic; }
+  .nav-badge {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff; font-size: 0.7rem; font-weight: 500;
+    padding: 0.3rem 0.9rem; border-radius: 999px;
+    letter-spacing: 0.05em; text-transform: uppercase;
+  }
+
+  /* ─── Hero ─── */
+  .hero {
+    position: relative; z-index: 5;
+    text-align: center;
+    padding: 5rem 2rem 3rem;
+  }
+  .hero-tag {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: rgba(127,90,240,0.12); border: 1px solid rgba(127,90,240,0.3);
+    color: var(--accent); font-size: 0.78rem; font-weight: 500;
+    padding: 0.35rem 1rem; border-radius: 999px;
+    margin-bottom: 1.5rem; letter-spacing: 0.08em;
+    animation: fadeUp 0.6s ease both;
+  }
+  .hero-tag::before { content: '✦'; font-size: 0.7rem; }
+  .hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    line-height: 1.1; margin-bottom: 1rem;
+    animation: fadeUp 0.6s 0.1s ease both;
+  }
+  .hero h1 em { font-style: italic; color: var(--gold); }
+  .hero p {
+    color: var(--muted); font-size: 1.1rem; max-width: 500px;
+    margin: 0 auto 2rem; line-height: 1.7;
+    animation: fadeUp 0.6s 0.2s ease both;
+  }
+
+  /* ─── Stats Bar ─── */
+  .stats {
+    position: relative; z-index: 5;
+    display: flex; justify-content: center; gap: 3rem;
+    padding: 1.5rem 2rem;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,0.02);
+    margin-bottom: 3rem;
+    flex-wrap: wrap;
+  }
+  .stat { text-align: center; }
+  .stat-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem; font-weight: 700;
+    background: linear-gradient(135deg, var(--gold), var(--accent));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .stat-label { font-size: 0.75rem; color: var(--muted); margin-top: 0.2rem; text-transform: uppercase; letter-spacing: 0.08em; }
+
+  /* ─── Main Card ─── */
+  .main-card {
+    position: relative; z-index: 5;
+    max-width: 860px; margin: 0 auto;
+    padding: 0 1.5rem 5rem;
+    animation: fadeUp 0.7s 0.3s ease both;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 0 80px rgba(127,90,240,0.08), 0 30px 60px rgba(0,0,0,0.5);
+  }
+
+  /* ─── Language Selector ─── */
+  .lang-bar {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 1rem 1.5rem;
+    background: rgba(255,255,255,0.03);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .lang-label { font-size: 0.75rem; color: var(--muted); margin-right: 0.5rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  .lang-btn {
+    background: transparent; border: 1px solid var(--border);
+    color: var(--muted); font-size: 0.78rem; font-family: 'DM Sans', sans-serif;
+    padding: 0.3rem 0.8rem; border-radius: 8px; cursor: pointer;
+    transition: all 0.2s; white-space: nowrap;
+  }
+  .lang-btn:hover, .lang-btn.active {
+    background: var(--accent); border-color: var(--accent); color: #fff;
+  }
+
+  /* ─── Input Area ─── */
+  .input-area { padding: 1.5rem; }
+  .input-label {
+    font-size: 0.75rem; color: var(--muted); text-transform: uppercase;
+    letter-spacing: 0.08em; margin-bottom: 0.75rem; display: flex;
+    align-items: center; gap: 0.5rem;
+  }
+  .input-label::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent2); display: inline-block; }
+  .input-wrap { position: relative; }
+  textarea {
+    width: 100%; min-height: 130px;
+    background: rgba(255,255,255,0.04);
+    border: 1.5px solid var(--border);
+    border-radius: 14px; color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem; line-height: 1.6;
+    padding: 1rem 1.2rem;
+    resize: none; outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--glow);
+  }
+  textarea::placeholder { color: var(--muted); }
+  .char-count {
+    position: absolute; bottom: 0.75rem; right: 1rem;
+    font-size: 0.72rem; color: var(--muted);
+  }
+
+  /* ─── Quick Examples ─── */
+  .examples-row {
+    display: flex; gap: 0.5rem; flex-wrap: wrap;
+    margin-top: 0.75rem;
+  }
+  .eg-chip {
+    background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+    color: var(--muted); font-size: 0.72rem; font-family: 'DM Sans', sans-serif;
+    padding: 0.3rem 0.75rem; border-radius: 8px; cursor: pointer;
+    transition: all 0.2s; white-space: nowrap;
+  }
+  .eg-chip:hover { border-color: var(--gold); color: var(--gold); background: rgba(240,192,96,0.08); }
+
+  /* ─── Style Selector ─── */
+  .style-section {
+    padding: 0 1.5rem 1rem;
+    border-top: 1px solid var(--border);
+    padding-top: 1.2rem;
+  }
+  .style-label {
+    font-size: 0.75rem; color: var(--muted); text-transform: uppercase;
+    letter-spacing: 0.08em; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;
+  }
+  .style-label::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--gold); display: inline-block; }
+  .style-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(130px,1fr)); gap: 0.5rem;
+  }
+  .style-card {
+    background: rgba(255,255,255,0.03); border: 1.5px solid var(--border);
+    border-radius: 10px; padding: 0.65rem 0.8rem;
+    cursor: pointer; transition: all 0.2s; text-align: left;
+  }
+  .style-card:hover { border-color: var(--accent); background: rgba(127,90,240,0.08); }
+  .style-card.selected { border-color: var(--accent); background: rgba(127,90,240,0.15); }
+  .style-icon { font-size: 1.1rem; margin-bottom: 0.3rem; }
+  .style-name { font-size: 0.78rem; font-weight: 500; color: var(--text); }
+  .style-desc { font-size: 0.68rem; color: var(--muted); margin-top: 0.15rem; }
+
+  /* ─── Convert Button ─── */
+  .btn-area {
+    padding: 1.2rem 1.5rem;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .btn-convert {
+    flex: 1; min-width: 180px;
+    background: linear-gradient(135deg, var(--accent), #5a3fd0);
+    border: none; border-radius: 12px; color: #fff;
+    font-family: 'DM Sans', sans-serif; font-size: 1rem; font-weight: 500;
+    padding: 0.9rem 2rem; cursor: pointer;
+    transition: all 0.25s; position: relative; overflow: hidden;
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    box-shadow: 0 4px 20px rgba(127,90,240,0.35);
+  }
+  .btn-convert::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, transparent, rgba(255,255,255,0.12));
+    opacity: 0; transition: opacity 0.2s;
+  }
+  .btn-convert:hover::after { opacity: 1; }
+  .btn-convert:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(127,90,240,0.5); }
+  .btn-convert:active { transform: translateY(0); }
+  .btn-convert:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .btn-convert .spinner {
+    width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff; border-radius: 50%;
+    animation: spin 0.8s linear infinite; display: none;
+  }
+  .btn-convert.loading .spinner { display: block; }
+  .btn-convert.loading .btn-text { display: none; }
+  .options-right { display: flex; gap: 0.5rem; }
+  .btn-mini {
+    background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+    color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: 0.82rem;
+    padding: 0.6rem 1rem; border-radius: 10px; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-mini:hover { border-color: var(--accent2); color: var(--accent2); background: rgba(44,182,125,0.08); }
+
+  /* ─── Output ─── */
+  .output-section {
+    margin-top: 1.5rem;
+  }
+  .output-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; overflow: hidden;
+    box-shadow: 0 0 60px rgba(44,182,125,0.06), 0 20px 40px rgba(0,0,0,0.4);
+    animation: fadeUp 0.5s ease;
+  }
+  .output-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 1.5rem;
+    background: rgba(44,182,125,0.06);
+    border-bottom: 1px solid rgba(44,182,125,0.15);
+  }
+  .output-title {
+    display: flex; align-items: center; gap: 0.5rem;
+    font-size: 0.78rem; color: var(--accent2); text-transform: uppercase;
+    letter-spacing: 0.08em; font-weight: 500;
+  }
+  .output-title::before { content: '✓'; font-size: 0.9rem; }
+  .copy-btn {
+    background: rgba(44,182,125,0.12); border: 1px solid rgba(44,182,125,0.3);
+    color: var(--accent2); font-family: 'DM Sans', sans-serif; font-size: 0.78rem;
+    padding: 0.35rem 0.9rem; border-radius: 8px; cursor: pointer;
+    transition: all 0.2s; display: flex; align-items: center; gap: 0.4rem;
+  }
+  .copy-btn:hover { background: rgba(44,182,125,0.2); }
+  .copy-btn.copied { background: rgba(44,182,125,0.25); color: #fff; }
+  .output-body { padding: 1.5rem; }
+  .output-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.88rem; line-height: 1.8; color: var(--text);
+    white-space: pre-wrap; word-break: break-word;
+  }
+  .output-footer {
+    padding: 0.75rem 1.5rem;
+    border-top: 1px solid var(--border);
+    display: flex; gap: 0.5rem; flex-wrap: wrap;
+  }
+  .tag-chip {
+    background: rgba(127,90,240,0.1); border: 1px solid rgba(127,90,240,0.2);
+    color: var(--accent); font-size: 0.68rem; padding: 0.2rem 0.6rem; border-radius: 6px;
+  }
+
+  /* ─── Features ─── */
+  .features {
+    position: relative; z-index: 5;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem; max-width: 860px; margin: 0 auto;
+    padding: 0 1.5rem 4rem;
+  }
+  .feat-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 1.25rem;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .feat-card:hover { border-color: rgba(127,90,240,0.4); transform: translateY(-3px); }
+  .feat-icon { font-size: 1.5rem; margin-bottom: 0.6rem; }
+  .feat-title { font-size: 0.9rem; font-weight: 500; margin-bottom: 0.35rem; }
+  .feat-text { font-size: 0.78rem; color: var(--muted); line-height: 1.6; }
+
+  /* ─── Footer ─── */
+  footer {
+    position: relative; z-index: 5;
+    text-align: center; padding: 2rem;
+    border-top: 1px solid var(--border);
+    color: var(--muted); font-size: 0.78rem;
+  }
+  footer span { color: var(--gold); }
+
+  /* ─── Toast ─── */
+  .toast {
+    position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
+    background: var(--accent2); color: #fff; padding: 0.75rem 1.5rem;
+    border-radius: 12px; font-size: 0.85rem; z-index: 999;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s;
+    box-shadow: 0 8px 30px rgba(44,182,125,0.4);
+  }
+  .toast.show { opacity: 1; }
+
+  /* ─── Utility ─── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .hidden { display: none !important; }
+
+  @media (max-width: 600px) {
+    nav { padding: 1rem 1.25rem; }
+    .hero h1 { font-size: 2rem; }
+    .stats { gap: 1.5rem; }
+    .btn-area { flex-direction: column; }
+    .btn-convert { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-orbs">
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+</div>
+<div class="grid-overlay"></div>
+
+<!-- Navbar -->
+<nav>
+  <div class="logo">Prompt<span>Wala</span></div>
+  <div class="nav-badge">✦ AI Powered</div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-tag">HINDI · HINGLISH · ENGLISH → PERFECT AI PROMPT</div>
+  <h1>Apni Baat,<br><em>AI Ki Bhasha</em> Mein</h1>
+  <p>Kuch bhi boliye — Hindi mein, Hinglish mein, ya seedha seedha. Hum use ek powerful AI prompt mein badal denge.</p>
+</section>
+
+<!-- Stats -->
+<div class="stats">
+  <div class="stat"><div class="stat-num">50K+</div><div class="stat-label">Prompts Converted</div></div>
+  <div class="stat"><div class="stat-num">12</div><div class="stat-label">Output Styles</div></div>
+  <div class="stat"><div class="stat-num">3</div><div class="stat-label">Languages</div></div>
+  <div class="stat"><div class="stat-num">∞</div><div class="stat-label">Possibilities</div></div>
+</div>
+
+<!-- Main Card -->
+<div class="main-card">
+  <div class="card">
+
+    <!-- Language Bar -->
+    <div class="lang-bar">
+      <span class="lang-label">Bhasha चुनें:</span>
+      <button class="lang-btn active" data-lang="hi">🇮🇳 Hindi</button>
+      <button class="lang-btn" data-lang="hi-en">🔀 Hinglish</button>
+      <button class="lang-btn" data-lang="en">🌐 English</button>
+      <button class="lang-btn" data-lang="mr">महाराष्ट्र Marathi</button>
+      <button class="lang-btn" data-lang="bn">বাংলা Bengali</button>
+    </div>
+
+    <!-- Input -->
+    <div class="input-area">
+      <div class="input-label">Aap kya banana chahte ho?</div>
+      <div class="input-wrap">
+        <textarea id="userInput" placeholder="Yahan type karo... jaise: 'mujhe ek romantic story chahiye jisme hero villain ban jata hai' ya 'website bana do jo mausam bataye'" maxlength="500"></textarea>
+        <div class="char-count"><span id="charNum">0</span>/500</div>
+      </div>
+      <div class="examples-row" id="examplesRow">
+        <button class="eg-chip" onclick="fillExample(this)">🎨 Logo design karo</button>
+        <button class="eg-chip" onclick="fillExample(this)">📖 Ek kahani likho villain ki</button>
+        <button class="eg-chip" onclick="fillExample(this)">💻 Python code samjhao</button>
+        <button class="eg-chip" onclick="fillExample(this)">📸 Photo edit karo sunset style</button>
+        <button class="eg-chip" onclick="fillExample(this)">🎵 Song lyrics likho breakup pe</button>
+        <button class="eg-chip" onclick="fillExample(this)">📧 Professional email likhwao</button>
+      </div>
+    </div>
+
+    <!-- Style Selector -->
+    <div class="style-section">
+      <div class="style-label">Prompt Style</div>
+      <div class="style-grid" id="styleGrid">
+        <div class="style-card selected" data-style="detailed">
+          <div class="style-icon">🎯</div>
+          <div class="style-name">Detailed</div>
+          <div class="style-desc">Full professional prompt</div>
+        </div>
+        <div class="style-card" data-style="creative">
+          <div class="style-icon">🎨</div>
+          <div class="style-name">Creative</div>
+          <div class="style-desc">Imaginative & expressive</div>
+        </div>
+        <div class="style-card" data-style="technical">
+          <div class="style-icon">⚙️</div>
+          <div class="style-name">Technical</div>
+          <div class="style-desc">Step-by-step precise</div>
+        </div>
+        <div class="style-card" data-style="short">
+          <div class="style-icon">⚡</div>
+          <div class="style-name">Quick</div>
+          <div class="style-desc">Short & punchy</div>
+        </div>
+        <div class="style-card" data-style="story">
+          <div class="style-icon">📖</div>
+          <div class="style-name">Storytelling</div>
+          <div class="style-desc">Narrative focused</div>
+        </div>
+        <div class="style-card" data-style="image">
+          <div class="style-icon">🖼️</div>
+          <div class="style-name">Image Gen</div>
+          <div class="style-desc">For Midjourney/DALL-E</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Button Area -->
+    <div class="btn-area">
+      <button class="btn-convert" id="convertBtn" onclick="convertPrompt()">
+        <div class="spinner"></div>
+        <span class="btn-text">✦ Convert Karo</span>
+      </button>
+      <div class="options-right">
+        <button class="btn-mini" onclick="clearAll()">🗑 Clear</button>
+        <button class="btn-mini" onclick="randomExample()">🎲 Random</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Output -->
+  <div class="output-section hidden" id="outputSection">
+    <div class="output-card">
+      <div class="output-header">
+        <div class="output-title">Converted Prompt Ready</div>
+        <button class="copy-btn" id="copyBtn" onclick="copyOutput()">📋 Copy</button>
+      </div>
+      <div class="output-body">
+        <div class="output-text" id="outputText"></div>
+      </div>
+      <div class="output-footer" id="outputTags"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Features -->
+<div class="features">
+  <div class="feat-card">
+    <div class="feat-icon">🧠</div>
+    <div class="feat-title">Smart Understanding</div>
+    <div class="feat-text">Aapki seedhi baat ko AI samajhta hai aur professional prompt banata hai.</div>
+  </div>
+  <div class="feat-card">
+    <div class="feat-icon">🌐</div>
+    <div class="feat-title">Multi-Language</div>
+    <div class="feat-text">Hindi, Hinglish, Marathi, Bengali — sab bhasha mein kaam karta hai.</div>
+  </div>
+  <div class="feat-card">
+    <div class="feat-icon">⚡</div>
+    <div class="feat-title">Instant Results</div>
+    <div class="feat-text">2 second mein aapka prompt ready. Copy karo aur ChatGPT, Claude mein paste karo.</div>
+  </div>
+  <div class="feat-card">
+    <div class="feat-icon">🎨</div>
+    <div class="feat-title">6 Styles</div>
+    <div class="feat-text">Creative, Technical, Image Gen — kaam ke hisaab se style choose karo.</div>
+  </div>
+</div>
+
+<footer>
+  Made with ❤️ for <span>Bharat</span> — PromptWala © 2026
+</footer>
+
+<div class="toast" id="toast">✓ Copied to clipboard!</div>
+
+<script>
+const EXAMPLES = [
+  "Logo design karo ek coffee shop ke liye, modern aur minimal style mein",
+  "Ek kahani likho jisme villain actually hero nikle",
+  "Python mein machine learning ka code samjhao beginner ke liye",
+  "Photo edit karo sunset style mein, warm tones ke saath",
+  "Song lyrics likho breakup ke baad wali feeling pe",
+  "Professional email likhwao boss ko leave ke liye"
+];
+
+const STYLE_SYSTEM_PROMPTS = {
+  detailed: `You are a world-class prompt engineer. The user will give you a request in Hindi, Hinglish, or English. Convert it into a detailed, professional English prompt for AI models like ChatGPT or Claude. The prompt should:
+- Be clear, specific and actionable
+- Include context, tone, format instructions
+- Be 3-6 sentences long
+- Start with a clear role/task definition
+Only output the final prompt, nothing else.`,
+
+  creative: `You are a creative director and prompt engineer. Convert the user's request (which may be in Hindi/Hinglish/English) into a vivid, imaginative English prompt. Make it:
+- Rich with sensory details
+- Emotionally engaging  
+- Encourage unique creative output
+- Include mood, atmosphere, style direction
+Only output the final prompt, nothing else.`,
+
+  technical: `You are a technical prompt specialist. Convert the user's request (in Hindi/Hinglish/English) into a precise, step-by-step technical English prompt. Include:
+- Exact specifications
+- Expected output format
+- Any constraints or requirements
+- Technical terminology where appropriate
+Only output the final prompt, nothing else.`,
+
+  short: `You are a concise prompt engineer. Convert the user's request (in Hindi/Hinglish/English) into a short, punchy English prompt. Maximum 2 sentences. Make every word count. Only output the final prompt, nothing else.`,
+
+  story: `You are a narrative prompt specialist. Convert the user's request (in Hindi/Hinglish/English) into a rich storytelling English prompt. Include:
+- Genre and tone
+- Character details or POV
+- Story arc hints
+- Writing style direction
+Only output the final prompt, nothing else.`,
+
+  image: `You are an expert at writing image generation prompts for Midjourney and DALL-E. Convert the user's request (in Hindi/Hinglish/English) into a powerful image generation prompt. Include:
+- Subject description
+- Art style (photorealistic/illustration/painting etc)
+- Lighting and mood
+- Camera angle or composition
+- Quality modifiers like "8k, highly detailed, cinematic"
+Format it in the classic comma-separated Midjourney style. Only output the final prompt, nothing else.`
+};
+
+const STYLE_TAGS = {
+  detailed: ['Professional', 'ChatGPT', 'Claude', 'Gemini'],
+  creative: ['Creative', 'Expressive', 'Artistic'],
+  technical: ['Technical', 'Precise', 'Dev-Friendly'],
+  short: ['Quick', 'Concise', 'Power-Packed'],
+  story: ['Narrative', 'Fiction', 'Storytelling'],
+  image: ['Midjourney', 'DALL-E', 'Image AI']
+};
+
+let selectedStyle = 'detailed';
+let selectedLang = 'hi';
+
+// Lang buttons
+document.querySelectorAll('.lang-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedLang = btn.dataset.lang;
+  });
+});
+
+// Style cards
+document.querySelectorAll('.style-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.style-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    selectedStyle = card.dataset.style;
+  });
+});
+
+// Char count
+document.getElementById('userInput').addEventListener('input', function() {
+  document.getElementById('charNum').textContent = this.value.length;
+});
+
+function fillExample(el) {
+  const text = el.textContent.replace(/^[^\s]+\s/, '');
+  document.getElementById('userInput').value = text;
+  document.getElementById('charNum').textContent = text.length;
+}
+
+function randomExample() {
+  const r = EXAMPLES[Math.floor(Math.random() * EXAMPLES.length)];
+  document.getElementById('userInput').value = r;
+  document.getElementById('charNum').textContent = r.length;
+}
+
+function clearAll() {
+  document.getElementById('userInput').value = '';
+  document.getElementById('charNum').textContent = '0';
+  document.getElementById('outputSection').classList.add('hidden');
+}
+
+async function convertPrompt() {
+  const input = document.getElementById('userInput').value.trim();
+  if (!input) {
+    showToast('⚠️ Pehle kuch likho!');
+    return;
+  }
+
+  const btn = document.getElementById('convertBtn');
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  const langHint = {
+    'hi': 'The input is in Hindi.',
+    'hi-en': 'The input is in Hinglish (Hindi-English mix).',
+    'en': 'The input is in English.',
+    'mr': 'The input is in Marathi.',
+    'bn': 'The input is in Bengali.'
+  }[selectedLang] || '';
+
+  const systemPrompt = STYLE_SYSTEM_PROMPTS[selectedStyle];
+  const userMessage = `${langHint}\n\nUser's request: "${input}"`;
+
+  try {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userMessage }]
+      })
+    });
+
+    const data = await response.json();
+    const result = data.content?.[0]?.text || "Error: Kuch galat ho gaya.";
+
+    document.getElementById('outputText').textContent = result;
+
+    // Tags
+    const tags = STYLE_TAGS[selectedStyle] || [];
+    document.getElementById('outputTags').innerHTML = tags.map(t => `<span class="tag-chip">${t}</span>`).join('');
+
+    document.getElementById('outputSection').classList.remove('hidden');
+    document.getElementById('outputSection').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  } catch (err) {
+    showToast('❌ Network error. Try again!');
+  }
+
+  btn.classList.remove('loading');
+  btn.disabled = false;
+}
+
+function copyOutput() {
+  const text = document.getElementById('outputText').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = '✓ Copied!';
+    btn.classList.add('copied');
+    showToast('✓ Prompt copied to clipboard!');
+    setTimeout(() => {
+      btn.textContent = '📋 Copy';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
